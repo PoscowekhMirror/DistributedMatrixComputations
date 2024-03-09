@@ -10,7 +10,7 @@ namespace Benchmarks;
 
 [MemoryDiagnoser(true)]
 [ThreadingDiagnoser()]
-internal class SumBenchmarks
+public class SumBenchmarks
 {
     public static IList<int> Counts { set; get; } = new List<int>()
     {
