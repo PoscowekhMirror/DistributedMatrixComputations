@@ -20,22 +20,28 @@ public class SumBenchmarks
     private       Vector<decimal> _regularVectorLeft ;
     private       Vector<decimal> _regularVectorRight;
 
+    private Random _rng;
+
     [GlobalSetup]
-    public void Setup()
+    public void GlobalSetup()
     {
-        var rng = new Random(DateTime.Now.Second * 1000 + DateTime.Now.Microsecond);
-        _rawVectorLeft  = Enumerable.Repeat(false, count).Select(_ => rng.Next(0, 2 + sparsity) == 0 ? decimal.One : decimal.Zero).ToList();
-        _rawVectorRight = Enumerable.Repeat(false, count).Select(_ => rng.Next(0, 2 + sparsity) == 0 ? decimal.One : decimal.Zero).ToList();
+        _rng = new Random(DateTime.Now.Second * 1000 + DateTime.Now.Microsecond);
+    }
+    
+    [IterationSetup]
+    public void IterationSetup()
+    {
+        _rawVectorLeft  = Enumerable.Repeat(false, count).Select(_ => _rng.Next(0, 2 + sparsity) == 0 ? decimal.One : decimal.Zero).ToList();
+        _rawVectorRight = Enumerable.Repeat(false, count).Select(_ => _rng.Next(0, 2 + sparsity) == 0 ? decimal.One : decimal.Zero).ToList();
         
-        _sparseVectorLeft  = new SparseVector<decimal>(_rawVectorLeft );
-        _sparseVectorRight = new SparseVector<decimal>(_rawVectorRight);
-        
-        _regularVectorLeft  = new Vector<decimal>(_rawVectorLeft );
-        _regularVectorRight = new Vector<decimal>(_rawVectorRight);
+        _sparseVectorLeft   = new SparseVector<decimal>(_rawVectorLeft );
+        _sparseVectorRight  = new SparseVector<decimal>(_rawVectorRight);
+        _regularVectorLeft  = new       Vector<decimal>(_rawVectorLeft );
+        _regularVectorRight = new       Vector<decimal>(_rawVectorRight);
     }
 
-    [GlobalCleanup]
-    public void CleanUp()
+    [IterationCleanup]
+    public void IterationCleanup()
     {
         _rawVectorLeft     = _rawVectorRight     = new List<decimal>();
         _regularVectorLeft = _regularVectorRight = new Vector<decimal>(_rawVectorLeft);
@@ -44,7 +50,15 @@ public class SumBenchmarks
     }
     
     /*
-    [Benchmark(Baseline = true)]
+    [GlobalCleanup]
+    public void GlobalCleanup()
+    {
+
+    }
+    */
+    
+    /*
+    [Benchmark(Baseline)]
     public void ListSumLinq()
     {
         var sum =
