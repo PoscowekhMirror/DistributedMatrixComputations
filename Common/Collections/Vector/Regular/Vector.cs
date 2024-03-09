@@ -13,23 +13,18 @@ public sealed class Vector<T> : IVector<T>
     private readonly IList<T> _values;
     internal IList<T> Values => _values;
     
-    public IEnumerable<T> GetValuesOnly(bool includeZeroes = true, bool sort = false)
-    {
-        var values = includeZeroes
+    public IEnumerable<T> GetValuesOnly(bool includeZeroes = true) 
+        => includeZeroes
             ? _values.AsEnumerable()
             : _values.Where(v => v != T.Zero);
-        return _values;
-    }
-    public IEnumerable<IndexedElement<T>> GetIndexedElements(bool includeZeroes = false, bool sort = false)
-    {
-        var values = includeZeroes
+
+    public IEnumerable<IndexedElement<T>> GetIndexedElements(bool includeZeroes = true) 
+        => includeZeroes
             ? this.AsEnumerable()
             : Enumerable
                 .Range(0, _values.Count)
                 .Where(i => _values[i] != T.Zero)
                 .Select(i => new IndexedElement<T>(i, _values[i]));
-        return sort ? values.OrderBy(e => e.Index) : values;
-    }
 
     public T this[int index]
     {

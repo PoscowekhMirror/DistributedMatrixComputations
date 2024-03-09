@@ -71,9 +71,15 @@ public sealed class Chunk<T> : IChunk<T>
         
         Count = index + 1;
     }
-    internal Chunk(in T[] elements)
+    internal Chunk(int capacity, in T[] elements)
     {
-        _values = elements;
+        var finalElements = elements;
+        if (elements.Length != capacity)
+        {
+            finalElements = new T[capacity];
+            elements.CopyTo(finalElements, 0);
+        }
+        _values = finalElements;
         Count = elements.Length;
     }
 

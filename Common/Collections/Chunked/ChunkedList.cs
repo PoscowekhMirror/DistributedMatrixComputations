@@ -19,7 +19,7 @@ public sealed class ChunkedList<T> : IChunkedList<T>
 
     private void CheckRange(int index, int rangeStartIndex = 0, int rangeEndIndex = -1)
     {
-        var actualRangeEndIndex = rangeEndIndex == -1 ? Count - 1 : rangeEndIndex;
+        var actualRangeEndIndex = rangeEndIndex < 0 ? Count - 1 : rangeEndIndex;
         if (index < rangeStartIndex || index >= actualRangeEndIndex)
         {
             throw new IndexOutOfRangeException(
@@ -45,28 +45,20 @@ public sealed class ChunkedList<T> : IChunkedList<T>
         }
     }
 
-    public ChunkedList(int chunkSize)
+    public static int DefaultChunkSize { set; get; } = 32 * 1024 * 1024;
+    
+    public ChunkedList(int chunkSize = -1)
     {
-        if (chunkSize < 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(chunkSize));
-        }
-        
-        ChunkSize = chunkSize;
+        ChunkSize = chunkSize < 0 ? DefaultChunkSize : chunkSize;
         _chunks = new List<IChunk<T>>();
         Count = 0;
     }
     public ChunkedList(int chunkSize, IEnumerable<T> elements) 
     {
-        if (chunkSize < 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(chunkSize));
-        }
-        
-        ChunkSize = chunkSize;
+        ChunkSize = chunkSize < 0 ? DefaultChunkSize : chunkSize;
         _chunks = elements
             .Chunk(ChunkSize)
-            .Select(chunk => new Chunk<T>(chunk) as IChunk<T>)
+            .Select(chunk => new Chunk<T>(ChunkSize, chunk) as IChunk<T>)
             .ToList();
         Count = _chunks.Select(chunk => chunk.Count).Sum();
     }
@@ -95,6 +87,102 @@ public sealed class ChunkedList<T> : IChunkedList<T>
                 );
             }
             Count += chunk.Count;
+        }
+    }
+    
+    public void Add(IEnumerable<T> elements)
+    {
+        if (!_chunks.Any())
+        {
+            var chunksToAdd = elements
+                .Chunk(ChunkSize)
+                .Select(c => new Chunk<T>(ChunkSize, c) as IChunk<T>)
+                .ToList();
+            _chunks = chunksToAdd;
+            return;
+        }
+
+        var lastChunk = _chunks.Last();
+        if (lastChunk.IsFilled)
+        {
+            var chunksToAdd = elements
+                .Chunk(ChunkSize)
+                .Select(c => new Chunk<T>(ChunkSize, c) as IChunk<T>)
+                .ToList();
+            foreach (var chunk in chunksToAdd)
+            {
+                _chunks.Add(chunk);
+            }
+        }
+
+        var missingElementCount = lastChunk.Capacity - lastChunk.Count;
+
+        using var enumerator = elements.GetEnumerator();
+        while (enumerator.MoveNext() && missingElementCount > 0)
+        {
+            lastChunk.Add(enumerator.Current);
+            missingElementCount -= 1;
+        }
+
+        var newChunk = new Chunk<T>(ChunkSize);
+        
+        while (enumerator.MoveNext())
+        {
+            if (newChunk.IsFilled)
+            {
+                _chunks.Add(newChunk);
+                newChunk = new Chunk<T>(ChunkSize);
+            }
+            newChunk.Add(enumerator.Current);
+        }
+    }
+
+    public void Add(IChunk<T> chunk)
+    {
+        if (!_chunks.Any())
+        {
+            var chunksToAdd = chunk
+                .AsEnumerable()
+                .Chunk(ChunkSize)
+                .Select(c => new Chunk<T>(ChunkSize, c) as IChunk<T>)
+                .ToList();
+            _chunks = chunksToAdd;
+            return;
+        }
+
+        var lastChunk = _chunks.Last();
+        if (lastChunk.IsFilled)
+        {
+            var chunksToAdd = chunk
+                .AsEnumerable()
+                .Chunk(ChunkSize)
+                .Select(c => new Chunk<T>(ChunkSize, c) as IChunk<T>)
+                .ToList();
+            foreach (var chunkToAdd in chunksToAdd)
+            {
+                _chunks.Add(chunkToAdd);
+            }
+        }
+
+        var missingElementCount = lastChunk.Capacity - lastChunk.Count;
+
+        using var enumerator = chunk.AsEnumerable().GetEnumerator();
+        while (enumerator.MoveNext() && missingElementCount > 0)
+        {
+            lastChunk.Add(enumerator.Current);
+            missingElementCount -= 1;
+        }
+
+        var newChunk = new Chunk<T>(ChunkSize);
+        
+        while (enumerator.MoveNext())
+        {
+            if (newChunk.IsFilled)
+            {
+                _chunks.Add(newChunk);
+                newChunk = new Chunk<T>(ChunkSize);
+            }
+            newChunk.Add(enumerator.Current);
         }
     }
 

@@ -12,7 +12,7 @@ public class SparseIndexedVector<T> : ISparseVector<T>
     private readonly IList<IndexedElement<T>> _indexedElements;
     internal IReadOnlyList<IndexedElement<T>> IndexedElements => _indexedElements.AsReadOnly();
 
-    public IEnumerable<T> GetValuesOnly(bool includeZeroes = false, bool sort = true)
+    public IEnumerable<T> GetValuesOnly(bool includeZeroes = false)
     {
         if (includeZeroes == false)
         {
@@ -38,16 +38,10 @@ public class SparseIndexedVector<T> : ISparseVector<T>
 
         return values;
     }
-    public IEnumerable<IndexedElement<T>> GetIndexedElements(bool includeZeroes = false, bool sort = true)
-    {
-        var values = includeZeroes
+    public IEnumerable<IndexedElement<T>> GetIndexedElements(bool includeZeroes = false) 
+        => includeZeroes
             ? _indexedElements.AsEnumerable()
             : this.AsEnumerable();
-
-        return sort
-            ? values.OrderBy(e => e.Index)
-            : values;
-    }
 
     public T this[int index]
     {

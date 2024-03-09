@@ -1,4 +1,6 @@
-﻿namespace Common.Collections.Chunked;
+﻿using System.Collections.Immutable;
+
+namespace Common.Collections.Chunked;
 
 public interface IChunk<T> : IList<T>
 {

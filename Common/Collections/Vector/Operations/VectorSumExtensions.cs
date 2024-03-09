@@ -43,9 +43,9 @@ public static class VectorSumExtensions
         var data = new List<T>(l.Count);
         data.AddRange(
             l
-                .GetValuesOnly()
+                .GetValuesOnly(true)
                 .Zip(r
-                    .GetValuesOnly()
+                    .GetValuesOnly(true)
                 )
                 .Select(tuple => tuple.First + tuple.Second)
         );
@@ -64,9 +64,9 @@ public static class VectorSumExtensions
         var data = new List<T>(l.Count);
         data.AddRange(
             l
-                .GetValuesOnly()
+                .GetValuesOnly(true)
                 .Zip(r
-                    .GetValuesOnly()
+                    .GetValuesOnly(true)
                 )
                 .AsParallel()
                 .Select(tuple => tuple.First + tuple.Second)
@@ -87,7 +87,10 @@ public static class VectorSumExtensions
 
         return new Regular.Vector<T>(
             l
-                .Union(r)
+                .GetIndexedElements(true)
+                .Union(r
+                    .GetIndexedElements(false)
+                )
                 .GroupBy(e => e.Index, e => e.Value)
                 .OrderBy(e => e.Key)
                 .Select(
@@ -120,7 +123,10 @@ public static class VectorSumExtensions
         return new SparseIndexedVector<T>(
             l.Count
             ,l
-                .Union(r)
+                .GetIndexedElements(false)
+                .Union(r
+                    .GetIndexedElements(false)
+                )
                 .GroupBy(e => e.Index, e => e.Value)
                 .Select(g => 
                     new IndexedElement<T>(
@@ -154,8 +160,8 @@ public static class VectorSumExtensions
             Math.Min(l.Count, l.NonZeroCount + r.NonZeroCount)
         );
 
-        using var lEnum = l/*.OrderBy(e => e.Index)*/.GetEnumerator();
-        using var rEnum = r/*.OrderBy(e => e.Index)*/.GetEnumerator();
+        using var lEnum = l.GetIndexedElements(false)/*.OrderBy(e => e.Index)*/.GetEnumerator();
+        using var rEnum = r.GetIndexedElements(false)/*.OrderBy(e => e.Index)*/.GetEnumerator();
 
         IEnumerator<IndexedElement<T>>? leftToEnumerate = null;
 
@@ -309,7 +315,10 @@ public static class VectorSumExtensions
         var data = new List<IndexedElement<T>>(l.NonZeroCount + r.NonZeroCount);
         data.AddRange(
             l
-                .Union(r)
+                .GetIndexedElements(false)
+                .Union(r
+                    .GetIndexedElements(false)
+                )
                 .AsParallel()
                 .GroupBy(e => e.Index, e => e.Value)
                 .Select(g => 

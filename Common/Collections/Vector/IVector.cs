@@ -9,8 +9,8 @@ public interface IVector<T> :
      IEnumerable<IndexedElement<T>>
     // ,ISerializable<ISerializedVector>
 {
-    IEnumerable<T> GetValuesOnly(bool includeZeroes, bool sort);
-    IEnumerable<IndexedElement<T>> GetIndexedElements(bool includeZeroes, bool sort);
+    IEnumerable<T> GetValuesOnly(bool includeZeroes);
+    IEnumerable<IndexedElement<T>> GetIndexedElements(bool includeZeroes);
 
     T this[int index] { get; }
     

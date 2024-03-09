@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using Common.Collections.Chunked;
 using Common.Collections.Element;
 using Common.Collections.Vector.Operations;
 using Common.Collections.Vector.Sparse.Indexed;
@@ -27,9 +28,19 @@ var count = 10;
 var sparsityFactor = 0; // 1+sparsityFactor zero elements to 1 non-zero element
 var rng = new Random(DateTime.Now.Second * 1000 + DateTime.Now.Microsecond);
 
-var lData = GenerateData<int>(count, sparsityFactor, rng);
-var rData = GenerateData<int>(count, sparsityFactor, rng);
+var data = GenerateData<int>(count, sparsityFactor, rng);
 
+var chunkedList = new ChunkedList<int>(-1, data);
+
+for (int i = 0; i < count; i++)
+{
+    if (data[i] != chunkedList[i])
+    {
+        Console.WriteLine($"Index={i},RawDataValue={data[i]},ChunkedListValue={chunkedList[i]}");
+    }
+}
+
+/*
 var lVector = new SparseIndexedVector<int>(count, ToIndexedElements(lData).AsEnumerable());
 var rVector = new SparseIndexedVector<int>(count, ToIndexedElements(rData).AsEnumerable());
 
@@ -70,6 +81,7 @@ var sumVectorString = string.Join(",", sumVector);
 Console.WriteLine(nameof(sumVector));
 Console.WriteLine($"[{sumVectorString}]");
 Console.WriteLine();
+*/
 
 /*
 var rawData = Enumerable.Repeat(false, 100).ToList().AsReadOnly();

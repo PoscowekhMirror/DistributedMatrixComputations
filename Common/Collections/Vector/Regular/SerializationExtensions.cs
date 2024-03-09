@@ -41,7 +41,7 @@ public static class SerializationExtensions
         where T : INumber<T>
     {
         var schema = PrimitiveToSchemaMapping[typeof(T)];
-        var values = v.GetValuesOnly(true, false).ToArray();
+        var values = v.GetValuesOnly(true).ToArray();
         var field = schema.DataFields.First();
         var dataColumn = new DataColumn(field, values);
         using var memoryStream = new MemoryStream(DefaultMemoryStreamCapacity);
@@ -61,7 +61,7 @@ public static class SerializationExtensions
         where T : INumber<T>
     {
         var schema = PrimitiveToSchemaMapping[typeof(T)];
-        var values = v.GetValuesOnly(true, false).ToArray();
+        var values = v.GetValuesOnly(true).ToArray();
         var field = schema.DataFields.First();
         var dataColumn = new DataColumn(field, values);
         using var memoryStream = new MemoryStream(DefaultMemoryStreamCapacity);
@@ -81,7 +81,7 @@ public static class SerializationExtensions
         where T : INumber<T>
     {
         using var memoryStream = new MemoryStream(DefaultMemoryStreamCapacity);
-        var values = v.GetValuesOnly(true, false);
+        var values = v.GetValuesOnly(true);
         var schema = ParquetSerializer.SerializeAsync(values, memoryStream, options).Result;
         return memoryStream.ToArray();
     }
@@ -90,7 +90,7 @@ public static class SerializationExtensions
         where T : INumber<T>
     {
         using var memoryStream = new MemoryStream(DefaultMemoryStreamCapacity);
-        var values = v.GetValuesOnly(true, false);
+        var values = v.GetValuesOnly(true);
         var schema = await ParquetSerializer.SerializeAsync(values, memoryStream, options);
         return memoryStream.ToArray();
     }
