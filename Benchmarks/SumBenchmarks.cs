@@ -34,12 +34,12 @@ public class SumBenchmarks
     [ParamsSource(nameof(SparsityFactors))]
     public int sparsity;
 
-    public static IList<int> ChunkSizes { get; set; } = new List<int>()
-    {
-               1024 * 1024
-        , 32 * 1024 * 1024
-        ,128 * 1024 * 1024
-    };
+    // public static IList<int> ChunkSizes { get; set; } = new List<int>()
+    // {
+    //            1024 * 1024
+    //     , 32 * 1024 * 1024
+    //     ,128 * 1024 * 1024
+    // };
 
     private                List<int> _rawVectorLeft           ;
     private                List<int> _rawVectorRight          ;
@@ -47,14 +47,14 @@ public class SumBenchmarks
     private SparseIndexedVector<int> _sparseIndexedVectorRight;
     private              Vector<int> _regularVectorLeft       ;
     private              Vector<int> _regularVectorRight      ;
-    private         ChunkedList<int> _chunkedListLeft         ;
-    private         ChunkedList<int> _chunkedListRight        ;
+    // private         ChunkedList<int> _chunkedListLeft         ;
+    // private         ChunkedList<int> _chunkedListRight        ;
 
     private Random _rng;
     
     [GlobalSetup]
-    [ArgumentsSource(nameof(ChunkSizes))]
-    public void GlobalSetup(int chunkSize)
+    // [ArgumentsSource(nameof(ChunkSizes))]
+    public void GlobalSetup(/*int chunkSize*/)
     {
         _rng = new Random(DateTime.Now.Second * 1000 + DateTime.Now.Microsecond);
         
@@ -65,8 +65,8 @@ public class SumBenchmarks
         _sparseIndexedVectorRight  = new SparseIndexedVector<int>(           _rawVectorRight);
         _regularVectorLeft         = new              Vector<int>(           _rawVectorLeft );
         _regularVectorRight        = new              Vector<int>(           _rawVectorRight);
-        _chunkedListLeft           = new         ChunkedList<int>(chunkSize, _rawVectorLeft );
-        _chunkedListRight          = new         ChunkedList<int>(chunkSize, _rawVectorRight);
+        // _chunkedListLeft           = new         ChunkedList<int>(chunkSize, _rawVectorLeft );
+        // _chunkedListRight          = new         ChunkedList<int>(chunkSize, _rawVectorRight);
         
         GC.Collect();
     }
@@ -83,7 +83,7 @@ public class SumBenchmarks
         _rawVectorLeft            = null; _rawVectorRight           = null;
         _regularVectorLeft        = null; _regularVectorRight       = null;
         _sparseIndexedVectorLeft  = null; _sparseIndexedVectorRight = null;
-        _chunkedListLeft          = null; _chunkedListRight         = null;
+        // _chunkedListLeft          = null; _chunkedListRight         = null;
         GC.Collect();
     }
 
