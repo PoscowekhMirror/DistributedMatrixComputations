@@ -1,13 +1,11 @@
-using System.Runtime.Intrinsics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Text.Json.Serialization.Metadata;
-using Common.Vector;
-using Common.Vector.Operations;
-using Common.Vector.Serialization;
-using Common.Vector.Tasks;
-using Microsoft.AspNetCore.Http.HttpResults;
-using Newtonsoft.Json;
+using Common.Collections.Vector;
+using Common.Collections.Vector.Operations;
+using Common.Collections.Vector.Regular;
+using Common.Collections.Vector.Serialization;
+using Common.Collections.Vector.Sparse.Indexed;
+using Common.Tasks;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -121,16 +119,16 @@ vectorApi.MapPost("/sum", async context =>
                  (await vectorSumTask. LeftVector.DeserializeAsync<float>()).Vector
                 ,(await vectorSumTask.RightVector.DeserializeAsync<float>()).Vector
             );
-            vectorTypeName = (floatVector is Vector<float>, floatVector is SparseVector<float>) switch
+            vectorTypeName = (floatVector is Vector<float>, floatVector is SparseIndexedVector<float>) switch
             {
                 (true , false) => nameof(      Vector<float>),
-                (false,  true) => nameof(SparseVector<float>),
+                (false,  true) => nameof(SparseIndexedVector<float>),
                 (_    , _    ) => throw new ArgumentException()
             };
             result = vectorTypeName switch 
             {
                 nameof(      Vector<float>) => await (floatVector as       Vector<float>).SerializeAsync(),
-                nameof(SparseVector<float>) => await (floatVector as SparseVector<float>).SerializeAsync(),
+                nameof(SparseIndexedVector<float>) => await (floatVector as SparseIndexedVector<float>).SerializeAsync(),
                 _                           => throw new ArgumentException()
             };
             break;
@@ -140,16 +138,16 @@ vectorApi.MapPost("/sum", async context =>
                  (await vectorSumTask.LeftVector .DeserializeAsync<double>()).Vector
                 ,(await vectorSumTask.RightVector.DeserializeAsync<double>()).Vector
             );
-            vectorTypeName = (doubleVector is Vector<double>, doubleVector is SparseVector<double>) switch
+            vectorTypeName = (doubleVector is Vector<double>, doubleVector is SparseIndexedVector<double>) switch
             {
                 (true , false) => nameof(      Vector<double>),
-                (false, true ) => nameof(SparseVector<double>),
+                (false, true ) => nameof(SparseIndexedVector<double>),
                 (_    , _    ) => throw new ArgumentException()
             };
             result = vectorTypeName switch 
             {
                 nameof(      Vector<double>) => await (doubleVector as       Vector<double>).SerializeAsync(),
-                nameof(SparseVector<double>) => await (doubleVector as SparseVector<double>).SerializeAsync(),
+                nameof(SparseIndexedVector<double>) => await (doubleVector as SparseIndexedVector<double>).SerializeAsync(),
                 _                            => throw new ArgumentException()
             };
             break;
@@ -159,16 +157,16 @@ vectorApi.MapPost("/sum", async context =>
                  (await vectorSumTask.LeftVector .DeserializeAsync<decimal>()).Vector
                 ,(await vectorSumTask.RightVector.DeserializeAsync<decimal>()).Vector
             );
-            vectorTypeName = (decimalVector is Vector<decimal>, decimalVector is SparseVector<decimal>) switch
+            vectorTypeName = (decimalVector is Vector<decimal>, decimalVector is SparseIndexedVector<decimal>) switch
             {
                 (true , false) => nameof(      Vector<decimal>),
-                (false, true ) => nameof(SparseVector<decimal>),
+                (false, true ) => nameof(SparseIndexedVector<decimal>),
                 (_    , _    ) => throw new ArgumentException()
             };
             result = vectorTypeName switch 
             {
                 nameof(      Vector<decimal>) => await (decimalVector as       Vector<decimal>).SerializeAsync(),
-                nameof(SparseVector<decimal>) => await (decimalVector as SparseVector<decimal>).SerializeAsync(),
+                nameof(SparseIndexedVector<decimal>) => await (decimalVector as SparseIndexedVector<decimal>).SerializeAsync(),
                 _                             => throw new ArgumentException()
             };
             break;

@@ -115,36 +115,13 @@ public sealed class ChunkedList<T> : IChunkedList<T>
         
         lastChunk.Add(item);
     }
-
-    [Obsolete]
-    public void Insert(int index, T item)
-    {
-        CheckRange(index, rangeEndIndex: Count);
-
-        if (index == Count)
-        {
-            Add(item);
-        }
-
-        var chunkIndex = GetChunkIndex(index);
-        var chunk = _chunks[chunkIndex];
-
-        if (!chunk.IsFilled)
-        {
-            chunk.Insert(GetChunkElementIndex(index), item);
-        }
-        else
-        {
-            throw new NotImplementedException();
-        }
-    }
     
-    public int IndexOf(T item) 
+    private int IndexOf(T item) 
         => _chunks
             .Select(chunk => chunk.IndexOf(item))
             .FirstOrDefault(index => index != -1, -1);
 
-    public void RemoveAt(int index)
+    private void RemoveAt(int index)
     {
         CheckRange(index);
         _chunks[GetChunkIndex(index)].RemoveAt(GetChunkElementIndex(index));

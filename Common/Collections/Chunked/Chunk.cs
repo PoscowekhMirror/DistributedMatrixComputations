@@ -2,7 +2,7 @@
 
 namespace Common.Collections.Chunked;
 
-public struct Chunk<T> : IChunk<T>
+public sealed class Chunk<T> : IChunk<T>
 {
     // private readonly IList<T> _list;
     // internal IList<T> InternalChunkedList => _list;

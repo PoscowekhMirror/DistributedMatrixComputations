@@ -1,6 +1,6 @@
 ﻿namespace Common.Collections.Chunked;
 
-public interface IChunk<T> : System.Collections.Generic.IList<T>
+public interface IChunk<T> : IList<T>
 {
     ReadOnlySpan<T> Values { get; }
     int Capacity { get; }

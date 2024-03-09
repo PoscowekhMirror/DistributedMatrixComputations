@@ -1,6 +1,6 @@
 ﻿namespace Common.Collections.Chunked;
 
-public interface IChunkedList<T> : IList<T>
+public interface IChunkedList<T> : IReadOnlyList<T>, ICollection<T>
 {
     int ChunkSize { get; }
     int ChunkCount { get; }

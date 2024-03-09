@@ -1,16 +1,7 @@
-﻿using System.IO.Compression;
-using System.Net.Http.Json;
-using System.Numerics;
-using System.Text.Json;
-using Common.Vector;
-using Common.Vector.Operations;
-using Common.Vector.Serialization;
-using Common.Vector.Serialization.Output;
-using Common.Vector.Tasks;
-using Parquet;
-using Parquet.Data;
-using Parquet.Schema;
-using Parquet.Serialization;
+﻿using System.Numerics;
+using Common.Collections.Element;
+using Common.Collections.Vector.Operations;
+using Common.Collections.Vector.Sparse.Indexed;
 
 IList<T> GenerateData<T>(int count, int sparsityFactor, Random rng)
     where T : INumber<T>
@@ -39,8 +30,8 @@ var rng = new Random(DateTime.Now.Second * 1000 + DateTime.Now.Microsecond);
 var lData = GenerateData<int>(count, sparsityFactor, rng);
 var rData = GenerateData<int>(count, sparsityFactor, rng);
 
-var lVector = new SparseVector<int>(count, ToIndexedElements(lData).AsEnumerable());
-var rVector = new SparseVector<int>(count, ToIndexedElements(rData).AsEnumerable());
+var lVector = new SparseIndexedVector<int>(count, ToIndexedElements(lData).AsEnumerable());
+var rVector = new SparseIndexedVector<int>(count, ToIndexedElements(rData).AsEnumerable());
 
 var sumData = lData.Zip(rData, (l, r) => l + r).ToList();
 
@@ -169,15 +160,15 @@ Console.WriteLine(string.Join(",",  leftVectorRaw.Take(15)));
 Console.WriteLine(string.Join(",", rightVectorRaw.Take(15)));
 Console.WriteLine();
 
-var  leftVector = new SparseVector<decimal>( leftVectorRaw);
-var rightVector = new SparseVector<decimal>(rightVectorRaw);
+var  leftVector = new SparseIndexedVector<decimal>( leftVectorRaw);
+var rightVector = new SparseIndexedVector<decimal>(rightVectorRaw);
 
 var  leftVectorSerialized = await  leftVector.SerializeAsync();
 var rightVectorSerialized = await rightVector.SerializeAsync();
 
 Console.WriteLine($"{nameof(count)}={count}");
-Console.WriteLine($"{nameof( leftVector)} {nameof(SparseVector<decimal>.NonZeroCount)}={ leftVector.NonZeroCount}");
-Console.WriteLine($"{nameof(rightVector)} {nameof(SparseVector<decimal>.NonZeroCount)}={rightVector.NonZeroCount}");
+Console.WriteLine($"{nameof( leftVector)} {nameof(SparseIndexedVector<decimal>.NonZeroCount)}={ leftVector.NonZeroCount}");
+Console.WriteLine($"{nameof(rightVector)} {nameof(SparseIndexedVector<decimal>.NonZeroCount)}={rightVector.NonZeroCount}");
 Console.WriteLine();
 
 var sumTask = new SumTask(
@@ -203,7 +194,7 @@ var response = await client.PostAsJsonAsync(vectorMultiplicationApiUri, multipli
 //     throw new ApplicationException();
 // }
 // 
-// var resultVector = ((await sumResult.SerializedVector.DeserializeAsync<decimal>()).Vector as SparseVector<decimal>)!;
+// var resultVector = ((await sumResult.SerializedVector.DeserializeAsync<decimal>()).Vector as SparseIndexedVector<decimal>)!;
 
 // var manualVectorSum = 
 //     leftVectorRaw
