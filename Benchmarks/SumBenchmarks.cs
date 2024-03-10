@@ -115,6 +115,40 @@ public class SumBenchmarks
         var sum = result;
     }
     
+    [Benchmark]
+    public void ListSumParallelForLoop() 
+    {
+        var countBoth = _rawVectorLeft.Count;
+        var result = new List<int>(countBoth);
+
+        var parallelism = 4;
+
+        var threads = Enumerable
+            .Range(0, parallelism)
+            .Select(i => new Thread(_ =>
+            {
+                for (int j = countBoth * i / parallelism;
+                     j < Math.Min(countBoth, countBoth * (i + 1) / parallelism);
+                     ++j)
+                {
+                    result[j] = _rawVectorLeft[j] + _rawVectorRight[j];
+                }
+            })
+            {
+                Name = "ListSumParallelForLoop Worker " + i,
+                IsBackground = true,
+                Priority = ThreadPriority.Highest
+            });
+        
+        foreach (var thread in threads)
+        {
+            thread.Start();
+            thread.Join();
+        }
+
+        var sum = result;
+    }
+    
     // [Benchmark]
     public void ListSumLinqParallel()
     {
@@ -126,7 +160,7 @@ public class SumBenchmarks
                 .ToList();
     }
     
-    [Benchmark]
+    // [Benchmark]
     public void ListSumSpanForLoop()
     {
         var spanLeft  = CollectionsMarshal.AsSpan(_rawVectorLeft );
@@ -192,7 +226,7 @@ public class SumBenchmarks
         var sum = _sparseIndexedVectorLeft.SumLinqParallel(_sparseIndexedVectorRight);
     }
     
-    [Benchmark]
+    // [Benchmark]
     public void SparseVectorSumEnumSorted() 
     {
         var sum = _sparseIndexedVectorLeft.SumEnumSorted(_sparseIndexedVectorRight);

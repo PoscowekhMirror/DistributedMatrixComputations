@@ -1,38 +1,35 @@
-﻿using System.Collections.Immutable;
-using System.IO.Compression;
-using System.Reflection;
-using Parquet;
+﻿using Parquet;
 using Parquet.Schema;
 using Parquet.Serialization;
+using Common.Serialization;
 
 namespace Common.Collections.Serialization;
 
 public static class Common
 {
-    public static ParquetOptions DefaultParquetOptions { set; get; } = new() 
+    private static ParquetOptions? _defaultParquetOptions = null;
+    public static ParquetOptions DefaultParquetOptions
     {
-        UseDateOnlyTypeForDates = true
-    };
+        set => _defaultParquetOptions = value;
+        get => _defaultParquetOptions ?? global::Common.Serialization.Parquet.DefaultParquetOptions;
+    }
 
-    public static int DefaultMemoryStreamCapacity { set; get; } = 32 * 1024 * 1024;
-    
-    public static ParquetSerializerOptions DefaultSerializerOptions { set; get; } = new()
+    private static int? _defaultMemoryStreamCapacity = null;
+    public static int DefaultMemoryStreamCapacity
     {
-        CompressionLevel = CompressionLevel.SmallestSize,
-        CompressionMethod = CompressionMethod.Gzip,
-        RowGroupSize = DefaultMemoryStreamCapacity,
-        ParquetOptions = DefaultParquetOptions
-    };
+        set => _defaultMemoryStreamCapacity = value; 
+        get => _defaultMemoryStreamCapacity ?? global::Common.Serialization.Parquet.DefaultMemoryStreamCapacity;
+    }
+
+    private static ParquetSerializerOptions? _defaultSerializerOptions = null;
+    public static ParquetSerializerOptions DefaultSerializerOptions
+    {
+        set => _defaultSerializerOptions = value;
+        get => _defaultSerializerOptions ?? global::Common.Serialization.Parquet.DefaultSerializerOptions;
+    }
     
-    public static IReadOnlyDictionary<Type, ParquetSchema> PrimitiveToSchemaMapping { get; }
-        = Assembly
-            .GetCallingAssembly()
-            .GetTypes()
-            .Where(t => t.IsPrimitive)
-            .Select(t => new DataField("value", t, false, false, null))
-            .Select(f => new KeyValuePair<Type, ParquetSchema>(f.ClrType, new ParquetSchema(f)))
-            .ToImmutableSortedDictionary()
-            .AsReadOnly();
+    public static IReadOnlyDictionary<Type, ParquetSchema> PrimitiveToSchemaMapping
+        => global::Common.Serialization.Parquet.PrimitiveTypeParquetSchemas;
     
     
 }
