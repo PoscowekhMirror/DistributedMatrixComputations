@@ -1,44 +1,110 @@
-﻿using System.Numerics;
+﻿using System.Collections.Concurrent;
+using System.Numerics;
+using System.Runtime.InteropServices;
 using Common.Collections.Chunked;
 using Common.Collections.Element;
 using Common.Collections.Vector.Operations;
 using Common.Collections.Vector.Sparse.Indexed;
+using SimdLinq;
 
-IList<T> GenerateData<T>(int count, int sparsityFactor, Random rng)
+IEnumerable<T> GenerateData<T>(int count, int sparsityFactor, Random rng)
     where T : INumber<T>
 {
     return Enumerable
         .Repeat(false, count)
-        .Select(_ => rng.Next(0, 2 + sparsityFactor) == 0 ? T.One : T.Zero)
-        .ToList();
+        .Select(_ => rng.Next(0, 2 + sparsityFactor) == 0 ? T.One : T.Zero);
 }
 
-IList<IndexedElement<T>> ToIndexedElements<T>(IList<T> elements)
+IOrderedEnumerable<IndexedElement<T>> ToIndexedElements<T>(IList<T> elements)
     where T : INumber<T>
 {
     return Enumerable
         .Range(0, elements.Count)
         .Select(i => new IndexedElement<T>(i, elements[i]))
         .Where(e => e.Value != T.Zero)
-        .OrderBy(e => e.Index)
-        .ToList();
+        .OrderBy(e => e.Index);
 }
 
-var count = 10;
-var sparsityFactor = 0; // 1+sparsityFactor zero elements to 1 non-zero element
+(int height, int width) shape = (1_000, 2_000_000);
+var matrix = new int[shape.height,shape.width];
+var sparsityFactor = 2; // 1+sparsityFactor zero elements to 1 non-zero element
 var rng = new Random(DateTime.Now.Second * 1000 + DateTime.Now.Microsecond);
 
-var data = GenerateData<int>(count, sparsityFactor, rng);
-
-var chunkedList = new ChunkedList<int>(-1, data);
-
-for (int i = 0; i < count; i++)
+for (int i = 0; i < shape.height; i++)
 {
-    if (data[i] != chunkedList[i])
+    var data = GenerateData<int>(shape.width, sparsityFactor, rng);
+    var j = 0;
+    foreach (var e in data)
     {
-        Console.WriteLine($"Index={i},RawDataValue={data[i]},ChunkedListValue={chunkedList[i]}");
+        matrix[i, j++] = e * (rng.Next(0,1) == 0 ? -1 : 1);
     }
 }
+
+GC.Collect();
+
+var startTs = TimeOnly.FromDateTime(DateTime.Now);
+var sum = decimal.Zero;
+for (int i = 0; i < shape.height; i++)
+{
+    for (int j = 0; j < shape.width; j++)
+    {
+        sum += matrix[i, j];
+    }
+}
+var endTs = TimeOnly.FromDateTime(DateTime.Now);
+
+GC.Collect();
+
+var parStartTs = TimeOnly.FromDateTime(DateTime.Now);
+var sumQueue = new ConcurrentQueue<decimal>();
+var tasks = Enumerable
+    .Range(0, shape.height)
+    .Select(i => Task.Factory.StartNew(_ =>
+    {
+        var partialSum = decimal.Zero;
+        for (int j = 0; j < shape.width; j++)
+        {
+            partialSum += matrix[i, j];
+        }
+        sumQueue.Enqueue(partialSum);
+    }, null))
+    .ToList();
+
+await Task.WhenAll(tasks);
+
+var parSum = sumQueue.Sum();
+var parEndTs = TimeOnly.FromDateTime(DateTime.Now);
+
+GC.Collect();
+
+Console.WriteLine();
+Console.WriteLine("Shape");
+Console.WriteLine($"height={shape.height}");
+Console.WriteLine($"width={shape.width}");
+
+Console.WriteLine();
+Console.WriteLine("Sequential");
+Console.WriteLine($"sum={sum}");
+Console.WriteLine($"startTs={startTs}");
+Console.WriteLine($"endTs={endTs}");
+Console.WriteLine($"diffTs={endTs - startTs}");
+
+Console.WriteLine();
+Console.WriteLine("Parallel");
+Console.WriteLine($"sum={parSum}");
+Console.WriteLine($"startTs={parStartTs}");
+Console.WriteLine($"endTs={parEndTs}");
+Console.WriteLine($"diffTs={parEndTs - parStartTs}");
+
+// var chunkedList = new ChunkedList<int>(-1, data);
+// 
+// for (int i = 0; i < count; i++)
+// {
+//     if (data[i] != chunkedList[i])
+//     {
+//         Console.WriteLine($"Index={i},RawDataValue={data[i]},ChunkedListValue={chunkedList[i]}");
+//     }
+// }
 
 /*
 var lVector = new SparseIndexedVector<int>(count, ToIndexedElements(lData).AsEnumerable());
