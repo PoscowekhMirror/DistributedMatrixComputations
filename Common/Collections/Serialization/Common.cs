@@ -1,4 +1,5 @@
-﻿using Parquet;
+﻿using System.Collections.Immutable;
+using Parquet;
 using Parquet.Schema;
 using Parquet.Serialization;
 using Common.Serialization;
@@ -28,7 +29,7 @@ public static class Common
         get => _defaultSerializerOptions ?? global::Common.Serialization.Parquet.DefaultSerializerOptions;
     }
     
-    public static IReadOnlyDictionary<Type, ParquetSchema> PrimitiveToSchemaMapping
+    public static ImmutableSortedDictionary<string, ParquetSchema> PrimitiveToSchemaMapping
         => global::Common.Serialization.Parquet.PrimitiveTypeParquetSchemas;
     
     

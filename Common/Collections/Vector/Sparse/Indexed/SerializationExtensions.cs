@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.Collections.Immutable;
+using System.Numerics;
 using Common.Collections.Vector.Serialization;
 using Parquet;
 using Parquet.Schema;
@@ -29,7 +30,7 @@ public static class SerializationExtensions
         get => _defaultSerializerOptions ?? Collections.Serialization.Common.DefaultSerializerOptions;
     }
     
-    public static IReadOnlyDictionary<Type, ParquetSchema> PrimitiveToSchemaMapping
+    public static ImmutableSortedDictionary<string, ParquetSchema> PrimitiveToSchemaMapping
         => Collections.Serialization.Common.PrimitiveToSchemaMapping;
     
     public static ISerializedVector Serialize<T>(

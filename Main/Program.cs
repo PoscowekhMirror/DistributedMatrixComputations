@@ -1,10 +1,13 @@
 ﻿using System.Collections.Concurrent;
 using System.Numerics;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using Common.Collections.Chunked;
 using Common.Collections.Element;
 using Common.Collections.Vector.Operations;
 using Common.Collections.Vector.Sparse.Indexed;
+using Common.Serialization;
+using Parquet.Data;
 using SimdLinq;
 
 IEnumerable<T> GenerateData<T>(int count, int sparsityFactor, Random rng)
@@ -25,6 +28,61 @@ IOrderedEnumerable<IndexedElement<T>> ToIndexedElements<T>(IList<T> elements)
         .OrderBy(e => e.Index);
 }
 
+var count = 10000;
+var sparsityFactor = -1;
+var seed = unchecked((int) DateTime.Now.Ticks);
+var rng = new Random(seed);
+var serializerOptions = Common.Serialization.Parquet.DefaultSerializerOptions;
+
+var filePath = @"C:\Users\1tira\Desktop\Data\DistributedMatrixComputations\data.parquet";
+var inputData = GenerateData<int>(count, sparsityFactor, rng).ToList();
+using (var inputFile = File.OpenWrite(filePath))
+{ 
+    Common.Serialization.Parquet.SerializeAsync(inputData, inputFile, serializerOptions).Wait();
+}
+
+var fileStreamOptions = new FileStreamOptions
+{
+    Access = FileAccess.Read,
+    Mode = FileMode.Open,
+    Options = FileOptions.SequentialScan,
+    Share = FileShare.Read
+};
+
+Common.Collections.Sync.IVector<int> syncOutputData = null;
+var outputFile = File.Open(filePath, fileStreamOptions);
+syncOutputData = Common.Collections.Sync.Vector<int>.Create(outputFile, serializerOptions.ParquetOptions);
+syncOutputData.SetDeserializer(columns => columns.First().Data.Cast<int>());
+
+var outputData = Enumerable
+    .Range(0, syncOutputData.RowGroupCount)
+    .Select(rgIndex => syncOutputData.GetRowGroup(rgIndex))
+    .ToList();
+
+Console.WriteLine(nameof(inputData));
+Console.WriteLine($"{nameof(inputData.Count)}={inputData.Count}");
+Console.WriteLine($"{nameof(inputData)}.Sum()={inputData.Sum()}");
+Console.WriteLine();
+
+Console.WriteLine(nameof(outputData));
+Console.WriteLine($"{nameof(outputData)}.Count()={outputData.Count}");
+// Console.WriteLine($"{nameof(outputData)}.Sum()={outputData.Sum()}");
+Console.WriteLine();
+
+// foreach (var type in Common.Serialization.Parquet.Primitives)
+// {
+//     Console.WriteLine($"{nameof(type)}='{type.Name}'");
+// }
+
+/*
+foreach (var (type, schema) in Common.Serialization.Parquet.PrimitiveTypeParquetSchemas)
+{
+    var cleanSchemaString = schema.ToString().Replace("\n", string.Empty);
+    Console.WriteLine($"{nameof(type)}='{type}',{nameof(schema)}='{cleanSchemaString}'");
+}
+*/
+
+/*
 (int height, int width) shape = (1_000, 2_000_000);
 var matrix = new int[shape.height,shape.width];
 var sparsityFactor = 2; // 1+sparsityFactor zero elements to 1 non-zero element
@@ -95,16 +153,19 @@ Console.WriteLine($"sum={parSum}");
 Console.WriteLine($"startTs={parStartTs}");
 Console.WriteLine($"endTs={parEndTs}");
 Console.WriteLine($"diffTs={parEndTs - parStartTs}");
+*/
 
-// var chunkedList = new ChunkedList<int>(-1, data);
-// 
-// for (int i = 0; i < count; i++)
-// {
-//     if (data[i] != chunkedList[i])
-//     {
-//         Console.WriteLine($"Index={i},RawDataValue={data[i]},ChunkedListValue={chunkedList[i]}");
-//     }
-// }
+/*
+var chunkedList = new ChunkedList<int>(-1, data);
+
+for (int i = 0; i < count; i++)
+{
+    if (data[i] != chunkedList[i])
+    {
+        Console.WriteLine($"Index={i},RawDataValue={data[i]},ChunkedListValue={chunkedList[i]}");
+    }
+}
+*/
 
 /*
 var lVector = new SparseIndexedVector<int>(count, ToIndexedElements(lData).AsEnumerable());

@@ -34,13 +34,13 @@ public static class SerializationExtensions
         get => _defaultSerializerOptions ?? Collections.Serialization.Common.DefaultSerializerOptions;
     }
     
-    public static IReadOnlyDictionary<Type, ParquetSchema> PrimitiveToSchemaMapping
+    public static ImmutableSortedDictionary<string, ParquetSchema> PrimitiveToSchemaMapping
         => Collections.Serialization.Common.PrimitiveToSchemaMapping;
     
     private static byte[] SerializePrimitive<T>(Vector<T> v, ParquetSerializerOptions options) 
         where T : INumber<T>
     {
-        var schema = PrimitiveToSchemaMapping[typeof(T)];
+        var schema = PrimitiveToSchemaMapping[typeof(T).Name];
         var values = v.GetValuesOnly(true).ToArray();
         var field = schema.DataFields.First();
         var dataColumn = new DataColumn(field, values);
@@ -60,7 +60,7 @@ public static class SerializationExtensions
     private static async ValueTask<byte[]> SerializePrimitiveAsync<T>(Vector<T> v, ParquetSerializerOptions options) 
         where T : INumber<T>
     {
-        var schema = PrimitiveToSchemaMapping[typeof(T)];
+        var schema = PrimitiveToSchemaMapping[typeof(T).Name];
         var values = v.GetValuesOnly(true).ToArray();
         var field = schema.DataFields.First();
         var dataColumn = new DataColumn(field, values);

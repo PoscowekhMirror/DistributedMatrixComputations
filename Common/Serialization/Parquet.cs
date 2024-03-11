@@ -10,14 +10,14 @@ namespace Common.Serialization;
 
 public static class Parquet
 {
-    public static ParquetOptions DefaultParquetOptions { set; get; } = new() 
+    public static ParquetOptions DefaultParquetOptions { set; get; } = new()
     {
         UseDateOnlyTypeForDates = true
     };
 
     public static int DefaultRowGroupSize { set; get; } = 32 * 1024 * 1024;
     public static int DefaultMemoryStreamCapacity { set; get; } = DefaultRowGroupSize;
-    
+
     public static ParquetSerializerOptions DefaultSerializerOptions { set; get; } = new()
     {
         CompressionLevel = CompressionLevel.SmallestSize,
@@ -25,26 +25,48 @@ public static class Parquet
         RowGroupSize = DefaultRowGroupSize,
         ParquetOptions = DefaultParquetOptions
     };
-    
-    public static IEnumerable<Type> Primitives { get; }
-        = Assembly
-            .GetCallingAssembly()
-            .GetTypes()
-            .Where(t => t.IsPrimitive);
 
-    public static ImmutableSortedDictionary<Type, ParquetSchema> PrimitiveTypeParquetSchemas { get; }
-        = Primitives
-            .Select(type =>
-                new KeyValuePair<Type, ParquetSchema>(
-                    type
-                    , new ParquetSchema(new List<Field>()
-                    {
-                        new DataField("value", type, type.IsNullable())
-                    })
-                )
-            )
+    public static IReadOnlyList<Type> ExcludedPrimitiveTypes { get; }
+        = new List<Type> 
+            { 
+                 typeof( IntPtr)
+                ,typeof(UIntPtr) 
+            }
+            .ToList()
+            .AsReadOnly();
+
+    public static IReadOnlyList<Type> Primitives { get; }
+        = Assembly
+            .GetAssembly(typeof(int))
+            .GetTypes()
+            .Where(t => t.IsPrimitive)
+            .Where(t => !ExcludedPrimitiveTypes.Contains(t))
+            .ToList()
+            .AsReadOnly();
+
+    private static ImmutableSortedDictionary<string, Type> ExceptionTypeMapping { get; }
+        = new List<KeyValuePair<string, Type>>
+            {
+                new(typeof(char).Name, typeof(string))
+            }
             .ToImmutableSortedDictionary();
 
+    public static ImmutableSortedDictionary<string, ParquetSchema> PrimitiveTypeParquetSchemas { get; }
+        = Primitives
+            .Select(type => new KeyValuePair<string, ParquetSchema>(
+                 type.Name
+                ,new ParquetSchema(new List<Field>
+                {
+                    new DataField("value", ExceptionTypeMapping.GetValueOrDefault(type.Name, type), type.IsNullable())
+                })
+            ))
+            .ToImmutableSortedDictionary();
+
+    public static ParquetSchema GetParquetSchema(this Type type)
+        => type.IsPrimitive
+            ? PrimitiveTypeParquetSchemas[type.Name]
+            : type.GetParquetSchema(false);
+    
     public static byte[] Serialize<T>(this IEnumerable<T> values) 
         => SerializeAsync(values).Result;
 
@@ -129,7 +151,7 @@ public static class Parquet
         var type = typeof(T);
         if (type.IsPrimitive)
         {
-            return await SerializePrimitiveAsync(values, PrimitiveTypeParquetSchemas[type], actualOptions);
+            return await SerializePrimitiveAsync(values, PrimitiveTypeParquetSchemas[type.Name], actualOptions);
         }
         
         return await SerializeNonPrimitiveAsync(values, actualOptions);
@@ -148,7 +170,7 @@ public static class Parquet
         var type = typeof(T);
         if (type.IsPrimitive)
         {
-            await SerializePrimitiveAsync(values, PrimitiveTypeParquetSchemas[type], stream, actualOptions);
+            await SerializePrimitiveAsync(values, PrimitiveTypeParquetSchemas[type.Name], stream, actualOptions);
             return;
         }
         
